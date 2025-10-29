@@ -39,6 +39,10 @@
       font-weight: bold;
       text-align: center;
       transition: all 0.2s;
+      cursor: grab;
+    }
+    .team-card:active {
+      cursor: grabbing;
     }
     .team-card:hover {
       transform: scale(1.03);
@@ -59,6 +63,21 @@
       background: #f1f8e9;
       border-color: #689f38;
     }
+    .station1 .team-card {
+      background: #e8f5e8;
+      border-color: #4caf50;
+    }
+    .station2 .team-card {
+      background: #ffebee;
+      border-color: #f44336;
+    }
+    /* Make it read-only on display? Add ?display=1 to URL for no-drag */
+    .no-drag .team-card {
+      cursor: default;
+    }
+    .no-drag .team-card:hover {
+      transform: none;
+    }
   </style>
 </head>
 <body>
@@ -72,46 +91,159 @@
       <!-- WAITING TEAMS -->
       <div class="col-lg-3">
         <h2 class="station-title">Waiting</h2>
-        <div id="waiting" class="waiting">
-          <div class="team-card">Team Alpha</div>
-          <div class="team-card">Team Beta</div>
-          <div class="team-card">Team Gamma</div>
-          <div class="team-card">Team Delta</div>
+        <div id="waiting" class="station-col waiting droppable">
+          <!-- Teams populated by JS -->
         </div>
       </div>
 
       <!-- STATION 1 -->
       <div class="col-lg-3">
         <h2 class="station-title text-primary">Station 1</h2>
-        <div id="Warehouse A" class="station-col">
-          <!-- Teams dropped here -->
+        <div id="station1" class="station-col station1 droppable">
+          <!-- Teams populated by JS -->
         </div>
       </div>
 
       <!-- STATION 2 -->
       <div class="col-lg-3">
         <h2 class="station-title text-danger">Station 2</h2>
-        <div id="Warehouse B" class="station-col">
-          <!-- Teams dropped here -->
+        <div id="station2" class="station-col station2 droppable">
+          <!-- Teams populated by JS -->
         </div>
       </div>
 
       <!-- NEXT UP -->
       <div class="col-lg-3">
         <h2 class="station-title text-warning">Next Up ➡️</h2>
-        <div id="nextup" class="next-up">
-          <!-- One team here -->
+        <div id="nextup" class="station-col next-up droppable">
+          <!-- Teams populated by JS -->
         </div>
       </div>
 
     </div>
   </div>
 
-  <!-- Optional: Add SortableJS later for drag/drop -->
-  <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
-  <script>
-    // Enable drag/drop later when you add Firebase
-    // new Sortable(document.getElementById('waiting'), { group: 'shared' });
+  <!-- Firebase SDK (modular via CDN) -->
+  <script type="module">
+    // Import Firebase modules
+    import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.13.1/firebase-app.js';
+    import { getFirestore, collection, query, where, onSnapshot, doc, updateDoc, addDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js';
+    import Sortable from 'https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js';
+
+    // PASTE YOUR FIREBASE CONFIG HERE (from Firebase Console)
+    // For Firebase JS SDK v7.20.0 and later, measurementId is optional
+const firebaseConfig = {
+  apiKey: "AIzaSyAbKXYb0ImzYCoyzZG8pM70S2k3hilCppE",
+  authDomain: "drone-team-rotation.firebaseapp.com",
+  projectId: "drone-team-rotation",
+  storageBucket: "drone-team-rotation.firebasestorage.app",
+  messagingSenderId: "972886553431",
+  appId: "1:972886553431:web:c7253c4c8862e921720412",
+  measurementId: "G-VF7HF4EC4S"
+};
+
+    // Initialize Firebase
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    // Check if display-only mode (add ?display=1 to URL)
+    const isDisplayOnly = new URLSearchParams(window.location.search).get('display') === '1';
+    document.body.classList.toggle('no-drag', isDisplayOnly);
+
+    // DOM elements
+    const lists = {
+      waiting: document.getElementById('waiting'),
+      station1: document.getElementById('station1'),
+      station2: document.getElementById('station2'),
+      nextup: document.getElementById('nextup')
+    };
+
+    // Station mapping
+    const stationMap = {
+      waiting: null,
+      station1: 'station1',
+      station2: 'station2',
+      nextup: 'nextup'
+    };
+
+    // Listen to Firestore for real-time updates
+    function listenToTeams() {
+      const q = query(collection(db, 'teams'));
+      onSnapshot(q, (snapshot) => {
+        // Clear all lists
+        Object.values(lists).forEach(list => list.innerHTML = '');
+
+        snapshot.docs.forEach((docSnap) => {
+          const team = docSnap.data();
+          const station = team.station || null;
+          let targetList = lists.waiting; // Default to waiting
+
+          if (station === 'station1') targetList = lists.station1;
+          else if (station === 'station2') targetList = lists.station2;
+          else if (station === 'nextup') targetList = lists.nextup;
+
+          // Create card
+          const card = document.createElement('div');
+          card.className = 'team-card';
+          card.dataset.id = docSnap.id; // For drag/drop
+          card.draggable = !isDisplayOnly;
+          card.innerHTML = team.teamName;
+          targetList.appendChild(card);
+        });
+
+        // Re-init Sortable after update (key for real-time)
+        initSortable();
+      });
+    }
+
+    // Initialize drag/drop with SortableJS
+    function initSortable() {
+      Object.keys(lists).forEach(key => {
+        if (isDisplayOnly) return; // Skip on display
+
+        new Sortable(lists[key], {
+          group: 'teams', // Allow drag between lists
+          animation: 150,
+          ghostClass: 'sortable-ghost',
+          onEnd: async (evt) => {
+            const itemEl = evt.item;
+            const teamId = itemEl.dataset.id;
+            const newStation = stationMap[evt.to.id];
+
+            // Update Firestore
+            const teamRef = doc(db, 'teams', teamId);
+            await updateDoc(teamRef, {
+              station: newStation,
+              updatedAt: serverTimestamp()
+            });
+
+            console.log(`Moved ${itemEl.innerHTML} to ${newStation || 'waiting'}`);
+          }
+        });
+      });
+    }
+
+    // Load initial teams on start
+    listenToTeams();
+
+    // Optional: Add a team button (for testing)
+    if (!isDisplayOnly) {
+      const addBtn = document.createElement('button');
+      addBtn.innerText = '+ Add Team';
+      addBtn.className = 'btn btn-success';
+      addBtn.style.position = 'fixed'; addBtn.style.top = '10px'; addBtn.style.right = '10px';
+      addBtn.onclick = async () => {
+        const name = prompt('Team name?');
+        if (name) {
+          await addDoc(collection(db, 'teams'), {
+            teamName: name,
+            station: null,
+            createdAt: serverTimestamp()
+          });
+        }
+      };
+      document.body.appendChild(addBtn);
+    }
   </script>
 </body>
 </html>
