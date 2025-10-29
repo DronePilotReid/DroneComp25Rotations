@@ -76,7 +76,7 @@
 <body>
 
   <!-- YOUR LOGO / HEADER GRAPHIC -->
-  <img src="https://via.placeholder.com/800x200.png?text=COMPETITION+LOGO" alt="Competition Logo" class="header-img">
+  <img src="https://via.placeholder.com/800x200/0d47a1/ffffff?text=DRONE+COMP+2025" alt="Competition Logo" class="header-img">
 
   <div class="container-fluid">
     <div class="row">
@@ -110,12 +110,11 @@
 
   <!-- Firebase + SortableJS -->
 <script type="module">
-  // FIXED: Use Firebase v10 (stable, works with CDN modules)
+  // FIXED: Use Firebase v10 + SortableJS v1.14.0
   import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.13.1/firebase-app.js';
   import { getFirestore, collection, query, onSnapshot, doc, updateDoc, addDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js';
-  import Sortable from 'https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js';
+  import Sortable from 'https://cdn.jsdelivr.net/npm/sortablejs@1.14.0/Sortable.min.js'; // Fixed version
 
-  // Your Firebase config (this is correct!)
   const firebaseConfig = {
     apiKey: "AIzaSyAbKXYb0ImzYCoyzZG8pM70S2k3hilCppE",
     authDomain: "drone-team-rotation.firebaseapp.com",
@@ -126,11 +125,9 @@
     measurementId: "G-VF7HF4EC4S"
   };
 
-  // Initialize Firebase
   const app = initializeApp(firebaseConfig);
-  const db = getFirestore(app); // Now db is defined!
+  const db = getFirestore(app);
 
-  // Display-only mode
   const isDisplayOnly = new URLSearchParams(window.location.search).get('display') === '1';
   document.body.classList.toggle('no-drag', isDisplayOnly);
 
@@ -148,11 +145,9 @@
     nextup:     'nextup'
   };
 
-  // Listen for real-time updates
   function listenToTeams() {
     const q = query(collection(db, 'teams'));
     onSnapshot(q, (snapshot) => {
-      // Clear all lists
       Object.values(lists).forEach(list => list.innerHTML = '');
 
       snapshot.docs.forEach(docSnap => {
@@ -172,18 +167,16 @@
         target.appendChild(card);
       });
 
-      initSortable(); // Re-init drag/drop
+      initSortable();
     }, (error) => {
       console.error("Firestore error:", error);
     });
   }
 
-  // Initialize drag & drop
   function initSortable() {
     if (isDisplayOnly) return;
 
     Object.keys(lists).forEach(key => {
-      // Destroy existing Sortable if exists
       if (lists[key].sortable) lists[key].sortable.destroy();
 
       lists[key].sortable = new Sortable(lists[key], {
@@ -202,25 +195,20 @@
             });
           } catch (err) {
             console.error("Update failed:", err);
-            alert("Failed to update team. Check console.");
+            alert("Failed to move team.");
           }
         }
       });
     });
   }
 
-  // Start listening
   listenToTeams();
 
-  // Add team button (control only)
   if (!isDisplayOnly) {
     const btn = document.createElement('button');
     btn.innerText = '+ Add Team';
     btn.className = 'btn btn-success';
-    btn.style.position = 'fixed';
-    btn.style.top = '10px';
-    btn.style.right = '10px';
-    btn.style.zIndex = '1000';
+    btn.style.cssText = 'position:fixed;top:10px;right:10px;z-index:1000;';
     btn.onclick = async () => {
       const name = prompt('Team name?');
       if (name?.trim()) {
