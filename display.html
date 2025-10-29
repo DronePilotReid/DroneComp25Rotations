@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Drone Comp - Display</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"/>
+  <style>
+    body { background: #000; color: #fff; margin: 0; padding: 20px; font-family: 'Arial', sans-serif; }
+    .header-img { width: 100%; max-height: 180px; object-fit: contain; background: #fff; padding: 10px; border-radius: 12px; margin-bottom: 20px; }
+    .station-col { background: #222; border-radius: 15px; padding: 20px; min-height: 400px; box-shadow: 0 6px 12px rgba(0,0,0,0.5); }
+    .team-card { background: #333; color: #fff; border: 3px solid #555; border-radius: 12px; padding: 16px; margin: 12px 0; font-size: 42px; font-weight: bold; text-align: center; }
+    .station-title { font-size: 48px; font-weight: bold; text-align: center; margin-bottom: 20px; }
+    .next-up .team-card { background: #ff9800; color: #000; border-color: #f57c00; }
+    .waiting .team-card { background: #4caf50; color: #fff; border-color: #388e3c; }
+    .warehouseA .team-card { background: #2196f3; color: #fff; border-color: #1976d2; }
+    .warehouseB .team-card { background: #f44336; color: #fff; border-color: #d32f2f; }
+  </style>
+</head>
+<body>
+
+  <img src="https://via.placeholder.com/800x200/0d47a1/ffffff?text=DRONE+COMP+2025" alt="Logo" class="header-img">
+
+  <div class="container-fluid">
+    <div class="row">
+      <div class="col-lg-3"><h2 class="station-title text-light">Waiting</h2><div id="waiting" class="station-col waiting"></div></div>
+      <div class="col-lg-3"><h2 class="station-title text-primary">Warehouse A</h2><div id="warehouseA" class="station-col warehouseA"></div></div>
+      <div class="col-lg-3"><h2 class="station-title text-danger">Warehouse B</h2><div id="warehouseB" class="station-col warehouseB"></div></div>
+      <div class="col-lg-3"><h2 class="station-title text-warning">Next Up ➡️</h2><div id="nextup" class="station-col next-up"></div></div>
+    </div>
+  </div>
+
+  <!-- SortableJS (global) -->
+  <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+
+  <!-- Firebase + Display Logic -->
+  <script type="module">
+    import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.13.1/firebase-app.js';
+    import { getFirestore, collection, query, onSnapshot } from 'https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js';
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyAbKXYb0ImzYCoyzZG8pM70S2k3hilCppE",
+      authDomain: "drone-team-rotation.firebaseapp.com",
+      projectId: "drone-team-rotation",
+      storageBucket: "drone-team-rotation.firebasestorage.app",
+      messagingSenderId: "972886553431",
+      appId: "1:972886553431:web:c7253c4c8862e921720412",
+      measurementId: "G-VF7HF4EC4S"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    const lists = {
+      waiting:    document.getElementById('waiting'),
+      warehouseA: document.getElementById('warehouseA'),
+      warehouseB: document.getElementById('warehouseB'),
+      nextup:     document.getElementById('nextup')
+    };
+
+    const q = query(collection(db, 'teams'));
+    onSnapshot(q, (snapshot) => {
+      Object.values(lists).forEach(l => l.innerHTML = '');
+      snapshot.docs.forEach(docSnap => {
+        const team = docSnap.data();
+        const station = team.station || null;
+        let target = lists.waiting;
+        if (station === 'warehouseA') target = lists.warehouseA;
+        else if (station === 'warehouseB') target = lists.warehouseB;
+        else if (station === 'nextup') target = lists.nextup;
+
+        const card = document.createElement('div');
+        card.className = 'team-card';
+        card.textContent = team.teamName;
+        target.appendChild(card);
+      });
+    });
+  </script>
+</body>
+</html>
