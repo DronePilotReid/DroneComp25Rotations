@@ -109,11 +109,11 @@
   </div>
 
   <!-- Firebase + SortableJS -->
+  <!-- Load SortableJS globally (not as module) -->
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
 <script type="module">
-  // FIXED: Use Firebase v10 + SortableJS v1.14.0
   import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.13.1/firebase-app.js';
   import { getFirestore, collection, query, onSnapshot, doc, updateDoc, addDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js';
-  import Sortable from 'https://cdn.jsdelivr.net/npm/sortablejs@1.14.0/Sortable.min.js'; // Fixed version
 
   const firebaseConfig = {
     apiKey: "AIzaSyAbKXYb0ImzYCoyzZG8pM70S2k3hilCppE",
@@ -152,7 +152,7 @@
 
       snapshot.docs.forEach(docSnap => {
         const team = docSnap.data();
-        const station = team.station || null;
+        const station = team.station ?? null;
         let target = lists.waiting;
 
         if (station === 'warehouseA') target = lists.warehouseA;
@@ -170,15 +170,20 @@
       initSortable();
     }, (error) => {
       console.error("Firestore error:", error);
+      alert("Firestore error — check console.");
     });
   }
 
   function initSortable() {
     if (isDisplayOnly) return;
 
-    Object.keys(lists).forEach(key => {
-      if (lists[key].sortable) lists[key].sortable.destroy();
+    // Destroy old instances
+    Object.values(lists).forEach(list => {
+      if (list.sortable) list.sortable.destroy();
+    });
 
+    // Re-init with global Sortable
+    Object.keys(lists).forEach(key => {
       lists[key].sortable = new Sortable(lists[key], {
         group: 'teams',
         animation: 150,
@@ -188,13 +193,12 @@
           const newStation = stationMap[evt.to.id];
 
           try {
-            const ref = doc(db, 'teams', teamId);
-            await updateDoc(ref, {
+            await updateDoc(doc(db, 'teams', teamId), {
               station: newStation,
               updatedAt: serverTimestamp()
             });
           } catch (err) {
-            console.error("Update failed:", err);
+            console.error("Move failed:", err);
             alert("Failed to move team.");
           }
         }
@@ -202,8 +206,10 @@
     });
   }
 
+  // Start
   listenToTeams();
 
+  // Add Team Button
   if (!isDisplayOnly) {
     const btn = document.createElement('button');
     btn.innerText = '+ Add Team';
