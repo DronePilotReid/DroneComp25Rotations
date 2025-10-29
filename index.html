@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Competition Stations</title>
+  <title>Competition Warehouses</title>
   <!-- Bootstrap CDN -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"/>
   <style>
@@ -41,9 +41,7 @@
       transition: all 0.2s;
       cursor: grab;
     }
-    .team-card:active {
-      cursor: grabbing;
-    }
+    .team-card:active { cursor: grabbing; }
     .team-card:hover {
       transform: scale(1.03);
       background: #bbdefb;
@@ -63,21 +61,16 @@
       background: #f1f8e9;
       border-color: #689f38;
     }
-    .station1 .team-card {
+    .warehouseA .team-card {
       background: #e8f5e8;
       border-color: #4caf50;
     }
-    .station2 .team-card {
+    .warehouseB .team-card {
       background: #ffebee;
       border-color: #f44336;
     }
-    /* Make it read-only on display? Add ?display=1 to URL for no-drag */
-    .no-drag .team-card {
-      cursor: default;
-    }
-    .no-drag .team-card:hover {
-      transform: none;
-    }
+    .no-drag .team-card { cursor: default; }
+    .no-drag .team-card:hover { transform: none; }
   </style>
 </head>
 <body>
@@ -91,42 +84,32 @@
       <!-- WAITING TEAMS -->
       <div class="col-lg-3">
         <h2 class="station-title">Waiting</h2>
-        <div id="waiting" class="station-col waiting droppable">
-          <!-- Teams populated by JS -->
-        </div>
+        <div id="waiting" class="station-col waiting droppable"></div>
       </div>
 
-      <!-- STATION 1 -->
+      <!-- WAREHOUSE A -->
       <div class="col-lg-3">
-        <h2 class="station-title text-primary">Station 1</h2>
-        <div id="Warehouse A" class="station-col station1 droppable">
-          <!-- Teams populated by JS -->
-          <div class="team-card">Team Beta</div>
-        </div>
+        <h2 class="station-title text-success">Warehouse A</h2>
+        <div id="warehouseA" class="station-col warehouseA droppable"></div>
       </div>
 
-      <!-- STATION 2 -->
+      <!-- WAREHOUSE B -->
       <div class="col-lg-3">
-        <h2 class="station-title text-danger">Station 2</h2>
-        <div id="Warehouse B" class="station-col station2 droppable">
-          <!-- Teams populated by JS -->
-        </div>
+        <h2 class="station-title text-danger">Warehouse B</h2>
+        <div id="warehouseB" class="station-col warehouseB droppable"></div>
       </div>
 
       <!-- NEXT UP -->
       <div class="col-lg-3">
         <h2 class="station-title text-warning">Next Up ➡️</h2>
-        <div id="nextup" class="station-col next-up droppable">
-          <!-- Teams populated by JS -->
-        </div>
+        <div id="nextup" class="station-col next-up droppable"></div>
       </div>
 
     </div>
   </div>
 
-  <!-- Firebase SDK (modular via CDN) -->
-  <script type="module">
-      // Import the functions you need from the SDKs you need
+  <!-- Firebase + SortableJS -->
+ // Import the functions you need from the SDKs you need
   import { initializeApp } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-app.js";
   import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-analytics.js";
   // TODO: Add SDKs for Firebase products that you want to use
@@ -148,93 +131,80 @@
   const app = initializeApp(firebaseConfig);
   const analytics = getAnalytics(app);
 
-    // Check if display-only mode (add ?display=1 to URL)
     const isDisplayOnly = new URLSearchParams(window.location.search).get('display') === '1';
     document.body.classList.toggle('no-drag', isDisplayOnly);
 
-    // DOM elements
     const lists = {
-      waiting: document.getElementById('waiting'),
-      station1: document.getElementById('station1'),
-      station2: document.getElementById('station2'),
-      nextup: document.getElementById('nextup')
+      waiting:   document.getElementById('waiting'),
+      warehouseA:document.getElementById('warehouseA'),
+      warehouseB:document.getElementById('warehouseB'),
+      nextup:    document.getElementById('nextup')
     };
 
-    // Station mapping
     const stationMap = {
-      waiting: null,
-      station1: 'station1',
-      station2: 'station2',
-      nextup: 'nextup'
+      waiting:    null,
+      warehouseA: 'warehouseA',
+      warehouseB: 'warehouseB',
+      nextup:     'nextup'
     };
 
-    // Listen to Firestore for real-time updates
     function listenToTeams() {
       const q = query(collection(db, 'teams'));
       onSnapshot(q, (snapshot) => {
-        // Clear all lists
-        Object.values(lists).forEach(list => list.innerHTML = '');
+        Object.values(lists).forEach(l => l.innerHTML = '');
 
-        snapshot.docs.forEach((docSnap) => {
+        snapshot.docs.forEach(docSnap => {
           const team = docSnap.data();
           const station = team.station || null;
-          let targetList = lists.waiting; // Default to waiting
+          let target = lists.waiting;
 
-          if (station === 'station1') targetList = lists.station1;
-          else if (station === 'station2') targetList = lists.station2;
-          else if (station === 'nextup') targetList = lists.nextup;
+          if (station === 'warehouseA') target = lists.warehouseA;
+          else if (station === 'warehouseB') target = lists.warehouseB;
+          else if (station === 'nextup') target = lists.nextup;
 
-          // Create card
           const card = document.createElement('div');
           card.className = 'team-card';
-          card.dataset.id = docSnap.id; // For drag/drop
+          card.dataset.id = docSnap.id;
           card.draggable = !isDisplayOnly;
-          card.innerHTML = team.teamName;
-          targetList.appendChild(card);
+          card.textContent = team.teamName;
+          target.appendChild(card);
         });
 
-        // Re-init Sortable after update (key for real-time)
         initSortable();
       });
     }
 
-    // Initialize drag/drop with SortableJS
     function initSortable() {
-      Object.keys(lists).forEach(key => {
-        if (isDisplayOnly) return; // Skip on display
+      if (isDisplayOnly) return;
 
+      Object.keys(lists).forEach(key => {
         new Sortable(lists[key], {
-          group: 'teams', // Allow drag between lists
+          group: 'teams',
           animation: 150,
           ghostClass: 'sortable-ghost',
           onEnd: async (evt) => {
-            const itemEl = evt.item;
-            const teamId = itemEl.dataset.id;
+            const teamId = evt.item.dataset.id;
             const newStation = stationMap[evt.to.id];
 
-            // Update Firestore
-            const teamRef = doc(db, 'teams', teamId);
-            await updateDoc(teamRef, {
+            const ref = doc(db, 'teams', teamId);
+            await updateDoc(ref, {
               station: newStation,
               updatedAt: serverTimestamp()
             });
-
-            console.log(`Moved ${itemEl.innerHTML} to ${newStation || 'waiting'}`);
           }
         });
       });
     }
 
-    // Load initial teams on start
     listenToTeams();
 
-    // Optional: Add a team button (for testing)
+    // Optional: Add team button (control PC only)
     if (!isDisplayOnly) {
-      const addBtn = document.createElement('button');
-      addBtn.innerText = '+ Add Team';
-      addBtn.className = 'btn btn-success';
-      addBtn.style.position = 'fixed'; addBtn.style.top = '10px'; addBtn.style.right = '10px';
-      addBtn.onclick = async () => {
+      const btn = document.createElement('button');
+      btn.innerText = '+ Add Team';
+      btn.className = 'btn btn-success';
+      btn.style.position = 'fixed'; btn.style.top = '10px'; btn.style.right = '10px';
+      btn.onclick = async () => {
         const name = prompt('Team name?');
         if (name) {
           await addDoc(collection(db, 'teams'), {
@@ -244,7 +214,7 @@
           });
         }
       };
-      document.body.appendChild(addBtn);
+      document.body.appendChild(btn);
     }
   </script>
 </body>
