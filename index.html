@@ -1,123 +1,10 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Competition Warehouses</title>
-  <!-- Bootstrap CDN -->
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"/>
-  <style>
-    body {
-      background: #f4f4f4;
-      font-family: 'Arial', sans-serif;
-      margin: 0;
-      padding: 20px;
-    }
-    .header-img {
-      width: 100%;
-      max-height: 180px;
-      object-fit: contain;
-      background: #fff;
-      padding: 10px;
-      border-radius: 12px;
-      margin-bottom: 20px;
-    }
-    .station-col {
-      background: #fff;
-      border-radius: 15px;
-      padding: 20px;
-      min-height: 400px;
-      box-shadow: 0 6px 12px rgba(0,0,0,0.1);
-    }
-    .team-card {
-      background: #e3f2fd;
-      border: 3px solid #1976d2;
-      border-radius: 12px;
-      padding: 16px;
-      margin: 12px 0;
-      font-size: 36px;
-      font-weight: bold;
-      text-align: center;
-      transition: all 0.2s;
-      cursor: grab;
-    }
-    .team-card:active { cursor: grabbing; }
-    .team-card:hover {
-      transform: scale(1.03);
-      background: #bbdefb;
-    }
-    .station-title {
-      font-size: 42px;
-      font-weight: bold;
-      text-align: center;
-      margin-bottom: 20px;
-      color: #0d47a1;
-    }
-    .next-up .team-card {
-      background: #fff3e0;
-      border-color: #f57c00;
-    }
-    .waiting .team-card {
-      background: #f1f8e9;
-      border-color: #689f38;
-    }
-    .warehouseA .team-card {
-      background: #e8f5e8;
-      border-color: #4caf50;
-    }
-    .warehouseB .team-card {
-      background: #ffebee;
-      border-color: #f44336;
-    }
-    .no-drag .team-card { cursor: default; }
-    .no-drag .team-card:hover { transform: none; }
-  </style>
-</head>
-<body>
-
-  <!-- YOUR LOGO / HEADER GRAPHIC -->
-  <img src="https://via.placeholder.com/800x200.png?text=COMPETITION+LOGO" alt="Competition Logo" class="header-img">
-
-  <div class="container-fluid">
-    <div class="row">
-
-      <!-- WAITING TEAMS -->
-      <div class="col-lg-3">
-        <h2 class="station-title">Waiting</h2>
-        <div id="waiting" class="station-col waiting droppable"></div>
-      </div>
-
-      <!-- WAREHOUSE A -->
-      <div class="col-lg-3">
-        <h2 class="station-title text-success">Warehouse A</h2>
-        <div id="warehouseA" class="station-col warehouseA droppable"></div>
-      </div>
-
-      <!-- WAREHOUSE B -->
-      <div class="col-lg-3">
-        <h2 class="station-title text-danger">Warehouse B</h2>
-        <div id="warehouseB" class="station-col warehouseB droppable"></div>
-      </div>
-
-      <!-- NEXT UP -->
-      <div class="col-lg-3">
-        <h2 class="station-title text-warning">Next Up ➡️</h2>
-        <div id="nextup" class="station-col next-up droppable"></div>
-      </div>
-
-    </div>
-  </div>
-
-  <!-- Firebase + SortableJS -->
 <script type="module">
-  // Import the functions you need from the SDKs you need
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-app.js";
-  import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-analytics.js";
-  // TODO: Add SDKs for Firebase products that you want to use
-  // https://firebase.google.com/docs/web/setup#available-libraries
+  // FIXED: Use Firebase v10 (stable, works with CDN modules)
+  import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.13.1/firebase-app.js';
+  import { getFirestore, collection, query, onSnapshot, doc, updateDoc, addDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js';
+  import Sortable from 'https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js';
 
-  // Your web app's Firebase configuration
-  // For Firebase JS SDK v7.20.0 and later, measurementId is optional
+  // Your Firebase config (this is correct!)
   const firebaseConfig = {
     apiKey: "AIzaSyAbKXYb0ImzYCoyzZG8pM70S2k3hilCppE",
     authDomain: "drone-team-rotation.firebaseapp.com",
@@ -130,93 +17,114 @@
 
   // Initialize Firebase
   const app = initializeApp(firebaseConfig);
-  const analytics = getAnalytics(app);
+  const db = getFirestore(app); // Now db is defined!
 
-    const isDisplayOnly = new URLSearchParams(window.location.search).get('display') === '1';
-    document.body.classList.toggle('no-drag', isDisplayOnly);
+  // Display-only mode
+  const isDisplayOnly = new URLSearchParams(window.location.search).get('display') === '1';
+  document.body.classList.toggle('no-drag', isDisplayOnly);
 
-    const lists = {
-      waiting:   document.getElementById('waiting'),
-      warehouseA:document.getElementById('warehouseA'),
-      warehouseB:document.getElementById('warehouseB'),
-      nextup:    document.getElementById('nextup')
-    };
+  const lists = {
+    waiting:    document.getElementById('waiting'),
+    warehouseA: document.getElementById('warehouseA'),
+    warehouseB: document.getElementById('warehouseB'),
+    nextup:     document.getElementById('nextup')
+  };
 
-    const stationMap = {
-      waiting:    null,
-      warehouseA: 'warehouseA',
-      warehouseB: 'warehouseB',
-      nextup:     'nextup'
-    };
+  const stationMap = {
+    waiting:    null,
+    warehouseA: 'warehouseA',
+    warehouseB: 'warehouseB',
+    nextup:     'nextup'
+  };
 
-    function listenToTeams() {
-      const q = query(collection(db, 'teams'));
-      onSnapshot(q, (snapshot) => {
-        Object.values(lists).forEach(l => l.innerHTML = '');
+  // Listen for real-time updates
+  function listenToTeams() {
+    const q = query(collection(db, 'teams'));
+    onSnapshot(q, (snapshot) => {
+      // Clear all lists
+      Object.values(lists).forEach(list => list.innerHTML = '');
 
-        snapshot.docs.forEach(docSnap => {
-          const team = docSnap.data();
-          const station = team.station || null;
-          let target = lists.waiting;
+      snapshot.docs.forEach(docSnap => {
+        const team = docSnap.data();
+        const station = team.station || null;
+        let target = lists.waiting;
 
-          if (station === 'warehouseA') target = lists.warehouseA;
-          else if (station === 'warehouseB') target = lists.warehouseB;
-          else if (station === 'nextup') target = lists.nextup;
+        if (station === 'warehouseA') target = lists.warehouseA;
+        else if (station === 'warehouseB') target = lists.warehouseB;
+        else if (station === 'nextup') target = lists.nextup;
 
-          const card = document.createElement('div');
-          card.className = 'team-card';
-          card.dataset.id = docSnap.id;
-          card.draggable = !isDisplayOnly;
-          card.textContent = team.teamName;
-          target.appendChild(card);
-        });
-
-        initSortable();
+        const card = document.createElement('div');
+        card.className = 'team-card';
+        card.dataset.id = docSnap.id;
+        card.draggable = !isDisplayOnly;
+        card.textContent = team.teamName;
+        target.appendChild(card);
       });
-    }
 
-    function initSortable() {
-      if (isDisplayOnly) return;
+      initSortable(); // Re-init drag/drop
+    }, (error) => {
+      console.error("Firestore error:", error);
+    });
+  }
 
-      Object.keys(lists).forEach(key => {
-        new Sortable(lists[key], {
-          group: 'teams',
-          animation: 150,
-          ghostClass: 'sortable-ghost',
-          onEnd: async (evt) => {
-            const teamId = evt.item.dataset.id;
-            const newStation = stationMap[evt.to.id];
+  // Initialize drag & drop
+  function initSortable() {
+    if (isDisplayOnly) return;
 
+    Object.keys(lists).forEach(key => {
+      // Destroy existing Sortable if exists
+      if (lists[key].sortable) lists[key].sortable.destroy();
+
+      lists[key].sortable = new Sortable(lists[key], {
+        group: 'teams',
+        animation: 150,
+        ghostClass: 'sortable-ghost',
+        onEnd: async (evt) => {
+          const teamId = evt.item.dataset.id;
+          const newStation = stationMap[evt.to.id];
+
+          try {
             const ref = doc(db, 'teams', teamId);
             await updateDoc(ref, {
               station: newStation,
               updatedAt: serverTimestamp()
             });
+          } catch (err) {
+            console.error("Update failed:", err);
+            alert("Failed to update team. Check console.");
           }
-        });
+        }
       });
-    }
+    });
+  }
 
-    listenToTeams();
+  // Start listening
+  listenToTeams();
 
-    // Optional: Add team button (control PC only)
-    if (!isDisplayOnly) {
-      const btn = document.createElement('button');
-      btn.innerText = '+ Add Team';
-      btn.className = 'btn btn-success';
-      btn.style.position = 'fixed'; btn.style.top = '10px'; btn.style.right = '10px';
-      btn.onclick = async () => {
-        const name = prompt('Team name?');
-        if (name) {
+  // Add team button (control only)
+  if (!isDisplayOnly) {
+    const btn = document.createElement('button');
+    btn.innerText = '+ Add Team';
+    btn.className = 'btn btn-success';
+    btn.style.position = 'fixed';
+    btn.style.top = '10px';
+    btn.style.right = '10px';
+    btn.style.zIndex = '1000';
+    btn.onclick = async () => {
+      const name = prompt('Team name?');
+      if (name?.trim()) {
+        try {
           await addDoc(collection(db, 'teams'), {
-            teamName: name,
+            teamName: name.trim(),
             station: null,
             createdAt: serverTimestamp()
           });
+        } catch (err) {
+          console.error("Add failed:", err);
+          alert("Failed to add team.");
         }
-      };
-      document.body.appendChild(btn);
-    }
-  </script>
-</body>
-</html>
+      }
+    };
+    document.body.appendChild(btn);
+  }
+</script>
