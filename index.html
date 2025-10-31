@@ -150,18 +150,24 @@
   const isDisplayOnly = new URLSearchParams(window.location.search).get('display') === '1';
   document.body.classList.toggle('no-drag', isDisplayOnly);
 
-  const lists = {
-    waiting:    document.getElementById('waiting'),
-    warehouseA: document.getElementById('warehouseA'),
-    warehouseB: document.getElementById('warehouseB'),
-    nextup:     document.getElementById('nextup')
+    const lists = {
+    tables:    document.getElementById('tables'),
+    waitA:     document.getElementById('waitA'),
+    ondeckA:   document.getElementById('ondeckA'),
+    inA:       document.getElementById('inA'),
+    waitB:     document.getElementById('waitB'),
+    ondeckB:   document.getElementById('ondeckB'),
+    inB:       document.getElementById('inB')
   };
 
   const stationMap = {
-    waiting:    null,
-    warehouseA: 'warehouseA',
-    warehouseB: 'warehouseB',
-    nextup:     'nextup'
+    tables:    null,
+    waitA:     'waitA',
+    ondeckA:   'ondeckA',
+    inA:       'inA',
+    waitB:     'waitB',
+    ondeckB:   'ondeckB',
+    inB:       'inB'
   };
 
   function listenToTeams() {
@@ -205,7 +211,8 @@
     });
 
     // Re-init with global Sortable
-    Object.keys(lists).forEach(key => {
+        Object.keys(lists).forEach(key => {
+      if (!lists[key]) return; // Skip nulls
       lists[key].sortable = new Sortable(lists[key], {
         group: 'teams',
         animation: 150,
