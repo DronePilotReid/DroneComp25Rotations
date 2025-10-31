@@ -69,6 +69,13 @@
       background: #ffebee;
       border-color: #f44336;
     }
+    .tables .team-card      { background: #e0e0e0; border-color: #9e9e9e; }
+    .waitA .team-card       { background: #bbdefb; border-color: #1976d2; }
+    .ondeckA .team-card     { background: #fff3e0; border-color: #f57c00; font-weight: bold; }
+    .inA .team-card         { background: #c8e6c9; border-color: #2e7d32; font-size: 40px; }
+    .waitB .team-card       { background: #bbdefb; border-color: #1976d2; }
+    .ondeckB .team-card     { background: #fff3e0; border-color: #f57c00; font-weight: bold; }
+    .inB .team-card         { background: #ffcdd2; border-color: #c62828; font-size: 40px; }
     .no-drag .team-card { cursor: default; }
     .no-drag .team-card:hover { transform: none; }
   </style>
@@ -80,35 +87,45 @@
   <img src="DroneCompBanner2025d.png" alt="Drone Comp 2025" style="width:100%; height:auto; object-fit:contain;">
 </div>
 
-  <div class="container-fluid">
-    <div class="row">
+ <div class="container-fluid">
+  <div class="row">
 
-      <!-- WAITING TEAMS -->
-      <div class="col-lg-3">
-        <h2 class="station-title">Waiting</h2>
-        <div id="waiting" class="station-col waiting droppable"></div>
-      </div>
-
-      <!-- WAREHOUSE A -->
-      <div class="col-lg-3">
-        <h2 class="station-title text-success">Warehouse A</h2>
-        <div id="warehouseA" class="station-col warehouseA droppable"></div>
-      </div>
-
-      <!-- WAREHOUSE B -->
-      <div class="col-lg-3">
-        <h2 class="station-title text-danger">Warehouse B</h2>
-        <div id="warehouseB" class="station-col warehouseB droppable"></div>
-      </div>
-
-      <!-- NEXT UP -->
-      <div class="col-lg-3">
-        <h2 class="station-title text-warning">Next Up ➡️</h2>
-        <div id="nextup" class="station-col next-up droppable"></div>
-      </div>
-
+    <!-- TEAM TABLES (default home) -->
+    <div class="col-lg-3">
+      <h2 class="station-title text-secondary">Team Tables</h2>
+      <div id="tables" class="station-col tables droppable"></div>
     </div>
+
+    <!-- WAREHOUSE A PIPELINE -->
+    <div class="col-lg-2">
+      <h2 class="station-title text-info">Waiting – A</h2>
+      <div id="waitA" class="station-col waitA droppable"></div>
+    </div>
+    <div class="col-lg-2">
+      <h2 class="station-title text-warning">On-Deck – A</h2>
+      <div id="ondeckA" class="station-col ondeckA droppable"></div>
+    </div>
+    <div class="col-lg-2">
+      <h2 class="station-title text-success fw-bold">WAREHOUSE A</h2>
+      <div id="inA" class="station-col inA droppable"></div>
+    </div>
+
+    <!-- WAREHOUSE B PIPELINE -->
+    <div class="col-lg-2">
+      <h2 class="station-title text-info">Waiting – B</h2>
+      <div id="waitB" class="station-col waitB droppable"></div>
+    </div>
+    <div class="col-lg-2">
+      <h2 class="station-title text-warning">On-Deck – B</h2>
+      <div id="ondeckB" class="station-col ondeckB droppable"></div>
+    </div>
+    <div class="col-lg-2">
+      <h2 class="station-title text-danger fw-bold">WAREHOUSE B</h2>
+      <div id="inB" class="station-col inB droppable"></div>
+    </div>
+
   </div>
+</div>
 
   <!-- Firebase + SortableJS -->
   <!-- Load SortableJS globally (not as module) -->
@@ -153,21 +170,24 @@
       Object.values(lists).forEach(list => list.innerHTML = '');
 
       snapshot.docs.forEach(docSnap => {
-        const team = docSnap.data();
-        const station = team.station ?? null;
-        let target = lists.waiting;
+  const team = docSnap.data();
+  const station = team.station || null;
+  let target = lists.tables; // default
 
-        if (station === 'warehouseA') target = lists.warehouseA;
-        else if (station === 'warehouseB') target = lists.warehouseB;
-        else if (station === 'nextup') target = lists.nextup;
+  if (station === 'waitA') target = lists.waitA;
+  else if (station === 'ondeckA') target = lists.ondeckA;
+  else if (station === 'inA') target = lists.inA;
+  else if (station === 'waitB') target = lists.waitB;
+  else if (station === 'ondeckB') target = lists.ondeckB;
+  else if (station === 'inB') target = lists.inB;
 
-        const card = document.createElement('div');
-        card.className = 'team-card';
-        card.dataset.id = docSnap.id;
-        card.draggable = !isDisplayOnly;
-        card.textContent = team.teamName;
-        target.appendChild(card);
-      });
+  const card = document.createElement('div');
+  card.className = 'team-card';
+  card.dataset.id = docSnap.id;
+  card.draggable = !isDisplayOnly;
+  card.textContent = team.teamName;
+  target.appendChild(card);
+});
 
       initSortable();
     }, (error) => {
