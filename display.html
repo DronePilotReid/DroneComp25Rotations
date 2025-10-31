@@ -36,22 +36,14 @@
     <!-- TEAM TABLES (default home) -->
     <div class="col-lg-3">
       <h2 class="station-title text-secondary">Team Tables</h2>
-      <div id="tables" class="station-col tables droppable"></div>
-    </div>
 
     <!-- WAREHOUSE A PIPELINE -->
     <div class="col-lg-2">
       <h2 class="station-title text-info">Waiting – A</h2>
-      <div id="waitA" class="station-col waitA droppable"></div>
-    </div>
     <div class="col-lg-2">
       <h2 class="station-title text-warning">On-Deck – A</h2>
-      <div id="ondeckA" class="station-col ondeckA droppable"></div>
-    </div>
     <div class="col-lg-2">
       <h2 class="station-title text-success fw-bold">WAREHOUSE A</h2>
-      <div id="inA" class="station-col inA droppable"></div>
-    </div>
 
     <!-- WAREHOUSE B PIPELINE -->
     <div class="col-lg-2">
@@ -60,12 +52,8 @@
     </div>
     <div class="col-lg-2">
       <h2 class="station-title text-warning">On-Deck – B</h2>
-      <div id="ondeckB" class="station-col ondeckB droppable"></div>
-    </div>
     <div class="col-lg-2">
       <h2 class="station-title text-danger fw-bold">WAREHOUSE B</h2>
-      <div id="inB" class="station-col inB droppable"></div>
-    </div>
 
   </div>
 </div>
@@ -75,62 +63,69 @@
 
   <!-- Firebase + Display Logic -->
   <script type="module">
-    import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.13.1/firebase-app.js';
-    import { getFirestore, collection, query, onSnapshot } from 'https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js';
+  import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.13.1/firebase-app.js';
+  import { getFirestore, collection, query, onSnapshot } from 'https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js';
 
-    const firebaseConfig = {
-      apiKey: "AIzaSyAbKXYb0ImzYCoyzZG8pM70S2k3hilCppE",
-      authDomain: "drone-team-rotation.firebaseapp.com",
-      projectId: "drone-team-rotation",
-      storageBucket: "drone-team-rotation.firebasestorage.app",
-      messagingSenderId: "972886553431",
-      appId: "1:972886553431:web:c7253c4c8862e921720412",
-      measurementId: "G-VF7HF4EC4S"
-    };
+  const firebaseConfig = {
+    apiKey: "AIzaSyAbKXYb0ImzYCoyzZG8pM70S2k3hilCppE",
+    authDomain: "drone-team-rotation.firebaseapp.com",
+    projectId: "drone-team-rotation",
+    storageBucket: "drone-team-rotation.firebasestorage.app",
+    messagingSenderId: "972886553431",
+    appId: "1:972886553431:web:c7253c4c8862e921720412",
+    measurementId: "G-VF7HF4EC4S"
+  };
 
-    const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
 
-   const lists = {
-  tables:    document.getElementById('tables'),
-  waitA:     document.getElementById('waitA'),
-  ondeckA:   document.getElementById('ondeckA'),
-  inA:       document.getElementById('inA'),
-  waitB:     document.getElementById('waitB'),
-  ondeckB:   document.getElementById('ondeckB'),
-  inB:       document.getElementById('inB')
-};
+  const lists = {
+    tables:    document.getElementById('tables'),
+    waitA:     document.getElementById('waitA'),
+    ondeckA:   document.getElementById('ondeckA'),
+    inA:       document.getElementById('inA'),
+    waitB:     document.getElementById('waitB'),
+    ondeckB:   document.getElementById('ondeckB'),
+    inB:       document.getElementById('inB')
+  };
 
-const stationMap = {
-  tables:    null,
-  waitA:     'waitA',
-  ondeckA:   'ondeckA',
-  inA:       'inA',
-  waitB:     'waitB',
-  ondeckB:   'ondeckB',
-  inB:       'inB'
-};
+  const stationMap = {
+    tables:    null,
+    waitA:     'waitA',
+    ondeckA:   'ondeckA',
+    inA:       'inA',
+    waitB:     'waitB',
+    ondeckB:   'ondeckB',
+    inB:       'inB'
+  };
 
-    const q = query(collection(db, 'teams'));
-snapshot.docs.forEach(docSnap => {
-  const team = docSnap.data();
-  const station = team.station || null;
-  let target = lists.tables; // default
+  // REAL-TIME LISTENER
+  const q = query(collection(db, 'teams'));
+  onSnapshot(q, (snapshot) => {
+    Object.values(lists).forEach(list => {
+      if (list) list.innerHTML = '';
+    });
 
-  if (station === 'waitA') target = lists.waitA;
-  else if (station === 'ondeckA') target = lists.ondeckA;
-  else if (station === 'inA') target = lists.inA;
-  else if (station === 'waitB') target = lists.waitB;
-  else if (station === 'ondeckB') target = lists.ondeckB;
-  else if (station === 'inB') target = lists.inB;
+    snapshot.docs.forEach(docSnap => {
+      const team = docSnap.data();
+      const station = team.station || null;
+      let target = lists.tables;
 
-  const card = document.createElement('div');
-  card.className = 'team-card';
-  card.dataset.id = docSnap.id;
-  card.draggable = !isDisplayOnly;
-  card.textContent = team.teamName;
-  target.appendChild(card);
-});
-  </script>
+      if (station === 'waitA') target = lists.waitA;
+      else if (station === 'ondeckA') target = lists.ondeckA;
+      else if (station === 'inA') target = lists.inA;
+      else if (station === 'waitB') target = lists.waitB;
+      else if (station === 'ondeckB') target = lists.ondeckB;
+      else if (station === 'inB') target = lists.inB;
+
+      const card = document.createElement('div');
+      card.className = 'team-card';
+      card.textContent = team.teamName;
+      target.appendChild(card);
+    });
+  }, (error) => {
+    console.error("Firestore error:", error);
+  });
+</script>
 </body>
 </html>
