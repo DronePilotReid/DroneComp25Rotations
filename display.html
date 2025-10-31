@@ -62,7 +62,7 @@
   <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
 
   <!-- Firebase + Display Logic -->
-  <script type="module">
+<script type="module">
   import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.13.1/firebase-app.js';
   import { getFirestore, collection, query, onSnapshot } from 'https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js';
 
@@ -79,52 +79,59 @@
   const app = initializeApp(firebaseConfig);
   const db = getFirestore(app);
 
-  const lists = {
-    tables:    document.getElementById('tables'),
-    waitA:     document.getElementById('waitA'),
-    ondeckA:   document.getElementById('ondeckA'),
-    inA:       document.getElementById('inA'),
-    waitB:     document.getElementById('waitB'),
-    ondeckB:   document.getElementById('ondeckB'),
-    inB:       document.getElementById('inB')
-  };
+  // Wait for DOM to be ready
+  document.addEventListener('DOMContentLoaded', () => {
+    const lists = {
+      tables:    document.getElementById('tables'),
+      waitA:     document.getElementById('waitA'),
+      ondeckA:   document.getElementById('ondeckA'),
+      inA:       document.getElementById('inA'),
+      waitB:     document.getElementById('waitB'),
+      ondeckB:   document.getElementById('ondeckB'),
+      inB:       document.getElementById('inB')
+    };
 
-  const stationMap = {
-    tables:    null,
-    waitA:     'waitA',
-    ondeckA:   'ondeckA',
-    inA:       'inA',
-    waitB:     'waitB',
-    ondeckB:   'ondeckB',
-    inB:       'inB'
-  };
+    // Validate all lists exist
+    const missing = Object.entries(lists)
+      .filter(([key, el]) => !el)
+      .map(([key]) => key);
+    if (missing.length > 0) {
+      console.error("Missing DOM elements:", missing);
+      return;
+    }
 
-  // REAL-TIME LISTENER
-  const q = query(collection(db, 'teams'));
-  onSnapshot(q, (snapshot) => {
-    Object.values(lists).forEach(list => {
-      if (list) list.innerHTML = '';
+    const q = query(collection(db, 'teams'));
+    onSnapshot(q, (snapshot) => {
+      // Clear only valid lists
+      Object.values(lists).forEach(list => {
+        if (list) list.innerHTML = '';
+      });
+
+      snapshot.docs.forEach(docSnap => {
+        const team = docSnap.data();
+        const station = team.station || null;
+        let target = lists.tables; // default
+
+        if (station === 'waitA') target = lists.waitA;
+        else if (station === 'ondeckA') target = lists.ondeckA;
+        else if (station === 'inA') target = lists.inA;
+        else if (station === 'waitB') target = lists.waitB;
+        else if (station === 'ondeckB') target = lists.ondeckB;
+        else if (station === 'inB') target = lists.inB;
+
+        if (!target) {
+          console.warn("No target for station:", station);
+          return;
+        }
+
+        const card = document.createElement('div');
+        card.className = 'team-card';
+        card.textContent = team.teamName;
+        target.appendChild(card);
+      });
+    }, (error) => {
+      console.error("Firestore error:", error);
     });
-
-    snapshot.docs.forEach(docSnap => {
-      const team = docSnap.data();
-      const station = team.station || null;
-      let target = lists.tables;
-
-      if (station === 'waitA') target = lists.waitA;
-      else if (station === 'ondeckA') target = lists.ondeckA;
-      else if (station === 'inA') target = lists.inA;
-      else if (station === 'waitB') target = lists.waitB;
-      else if (station === 'ondeckB') target = lists.ondeckB;
-      else if (station === 'inB') target = lists.inB;
-
-      const card = document.createElement('div');
-      card.className = 'team-card';
-      card.textContent = team.teamName;
-      target.appendChild(card);
-    });
-  }, (error) => {
-    console.error("Firestore error:", error);
   });
 </script>
 </body>
