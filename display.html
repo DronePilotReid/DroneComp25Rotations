@@ -72,20 +72,22 @@
   <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
 
   <!-- FIREBASE SCRIPT — AT THE END -->
-  <script type="module">
-    import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.13.1/firebase-app.js';
-    import { getFirestore, collection, query, onSnapshot } from 'https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js';
+ <script type="module">
+  import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.13.1/firebase-app.js';
+  import { getFirestore, collection, query, onSnapshot } from 'https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js';
 
-    const firebaseConfig = {
-      apiKey: "AIzaSyAbKXYb0ImzYCoyzZG8pM70S2k3hilCppE",
-      authDomain: "drone-team-rotation.firebaseapp.com",
-      projectId: "drone-team-rotation",
-      storageBucket: "drone-team-rotation.firebasestorage.app",
-      messagingSenderId: "972886553431",
-      appId: "1:972886553431:web:c7253c4c8862e921720412",
-      measurementId: "G-VF7HF4EC4S"
-    };
+  const firebaseConfig = {
+    apiKey: "AIzaSyAbKXYb0ImzYCoyzZG8pM70S2k3hilCppE",
+    authDomain: "drone-team-rotation.firebaseapp.com",
+    projectId: "drone-team-rotation",
+    storageBucket: "drone-team-rotation.firebasestorage.app",
+    messagingSenderId: "972886553431",
+    appId: "1:972886553431:web:c7253c4c8862e921720412",
+    measurementId: "G-VF7HF4EC4S"
+  };
 
+  // === WAIT FOR DOM TO LOAD ===
+  document.addEventListener('DOMContentLoaded', () => {
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
@@ -99,21 +101,24 @@
       inB:       document.getElementById('inB')
     };
 
-    // Safety check
+    // === VALIDATE ALL ELEMENTS EXIST ===
     const missing = Object.keys(lists).filter(key => !lists[key]);
     if (missing.length > 0) {
       console.error("Missing DOM elements:", missing);
-      return;
+      return; // Now LEGAL — inside function
     }
 
+    // === REAL-TIME LISTENER ===
     const q = query(collection(db, 'teams'));
     onSnapshot(q, (snapshot) => {
+      // Clear all lists
       Object.values(lists).forEach(list => list.innerHTML = '');
 
+      // Add each team
       snapshot.docs.forEach(docSnap => {
         const team = docSnap.data();
         const station = team.station || null;
-        let target = lists.tables;
+        let target = lists.tables; // default
 
         if (station === 'waitA') target = lists.waitA;
         else if (station === 'ondeckA') target = lists.ondeckA;
@@ -130,7 +135,7 @@
     }, (error) => {
       console.error("Firestore error:", error);
     });
-  </script>
-
+  });
+</script>
 </body>
 </html>
