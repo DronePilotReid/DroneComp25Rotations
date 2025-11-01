@@ -11,76 +11,84 @@
     .station-col { background: #222; border-radius: 15px; padding: 20px; min-height: 400px; box-shadow: 0 6px 12px rgba(0,0,0,0.5); }
     .team-card { background: #333; color: #fff; border: 3px solid #555; border-radius: 12px; padding: 16px; margin: 12px 0; font-size: 42px; font-weight: bold; text-align: center; }
     .station-title { font-size: 48px; font-weight: bold; text-align: center; margin-bottom: 20px; }
-    .next-up .team-card { background: #ff9800; color: #000; border-color: #f57c00; }
-    .waiting .team-card { background: #4caf50; color: #fff; border-color: #388e3c; }
-    .warehouseA .team-card { background: #2196f3; color: #fff; border-color: #1976d2; }
-    .warehouseB .team-card { background: #f44336; color: #fff; border-color: #d32f2f; }
-    .tables .team-card      { background: #e0e0e0; border-color: #9e9e9e; }
-    .waitA .team-card       { background: #bbdefb; border-color: #1976d2; }
-    .ondeckA .team-card     { background: #fff3e0; border-color: #f57c00; font-weight: bold; }
-    .inA .team-card         { background: #c8e6c9; border-color: #2e7d32; font-size: 40px; }
-    .waitB .team-card       { background: #bbdefb; border-color: #1976d2; }
-    .ondeckB .team-card     { background: #fff3e0; border-color: #f57c00; font-weight: bold; }
-    .inB .team-card         { background: #ffcdd2; border-color: #c62828; font-size: 40px; }
+    .tables .team-card { background: #e0e0e0; color: #000; border-color: #9e9e9e; }
+    .waitA .team-card { background: #bbdefb; color: #000; border-color: #1976d2; }
+    .ondeckA .team-card { background: #fff3e0; color: #000; border-color: #f57c00; font-weight: bold; }
+    .inA .team-card { background: #c8e6c9; color: #000; border-color: #2e7d32; font-size: 40px; }
+    .waitB .team-card { background: #bbdefb; color: #000; border-color: #1976d2; }
+    .ondeckB .team-card { background: #fff3e0; color: #000; border-color: #f57c00; font-weight: bold; }
+    .inB .team-card { background: #ffcdd2; color: #000; border-color: #c62828; font-size: 40px; }
   </style>
 </head>
 <body>
 
-<div style="width:100%; max-height:325px; overflow:hidden; background:#000; border-radius:12px; margin-bottom:20px;">
-  <img src="DroneCompBanner2025d.png" alt="Drone Comp 2025" style="width:100%; height:auto; object-fit:contain;">
-</div>
-
- <div class="container-fluid">
-  <div class="row">
-
-    <!-- TEAM TABLES (default home) -->
-    <div class="col-lg-3">
-      <h2 class="station-title text-secondary">Team Tables</h2>
-
-    <!-- WAREHOUSE A PIPELINE -->
-    <div class="col-lg-2">
-      <h2 class="station-title text-info">Waiting – A</h2>
-    <div class="col-lg-2">
-      <h2 class="station-title text-warning">On-Deck – A</h2>
-    <div class="col-lg-2">
-      <h2 class="station-title text-success fw-bold">WAREHOUSE A</h2>
-
-    <!-- WAREHOUSE B PIPELINE -->
-    <div class="col-lg-2">
-      <h2 class="station-title text-info">Waiting – B</h2>
-      <div id="waitA" class="station-col waitA"></div>
-    </div>
-    <div class="col-lg-2">
-      <h2 class="station-title text-warning">On-Deck – B</h2>
-    <div class="col-lg-2">
-      <h2 class="station-title text-danger fw-bold">WAREHOUSE B</h2>
-
+  <!-- BANNER -->
+  <div style="width:100%; max-height:325px; overflow:hidden; background:#000; border-radius:12px; margin-bottom:20px;">
+    <img src="DroneCompBanner2025d.png" alt="Drone Comp 2025" style="width:100%; height:auto; object-fit:contain;">
   </div>
-</div>
 
-  <!-- SortableJS (global) -->
+  <!-- STATIONS -->
+  <div class="container-fluid">
+    <div class="row">
+
+      <!-- TEAM TABLES -->
+      <div class="col-lg-3">
+        <h2 class="station-title text-secondary">Team Tables</h2>
+        <div id="tables" class="station-col tables"></div>
+      </div>
+
+      <!-- WAREHOUSE A -->
+      <div class="col-lg-2">
+        <h2 class="station-title text-info">Waiting – A</h2>
+        <div id="waitA" class="station-col waitA"></div>
+      </div>
+      <div class="col-lg-2">
+        <h2 class="station-title text-warning">On-Deck – A</h2>
+        <div id="ondeckA" class="station-col ondeckA"></div>
+      </div>
+      <div class="col-lg-2">
+        <h2 class="station-title text-success fw-bold">WAREHOUSE A</h2>
+        <div id="inA" class="station-col inA"></div>
+      </div>
+
+      <!-- WAREHOUSE B -->
+      <div class="col-lg-2">
+        <h2 class="station-title text-info">Waiting – B</h2>
+        <div id="waitB" class="station-col waitB"></div>
+      </div>
+      <div class="col-lg-2">
+        <h2 class="station-title text-warning">On-Deck – B</h2>
+        <div id="ondeckB" class="station-col ondeckB"></div>
+      </div>
+      <div class="col-lg-2">
+        <h2 class="station-title text-danger fw-bold">WAREHOUSE B</h2>
+        <div id="inB" class="station-col inB"></div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- SORTABLE (not used, but safe to keep) -->
   <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
 
-  <!-- Firebase + Display Logic -->
-<script type="module">
-  import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.13.1/firebase-app.js';
-  import { getFirestore, collection, query, onSnapshot } from 'https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js';
+  <!-- FIREBASE SCRIPT — AT THE END -->
+  <script type="module">
+    import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.13.1/firebase-app.js';
+    import { getFirestore, collection, query, onSnapshot } from 'https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js';
 
-  const firebaseConfig = {
-    apiKey: "AIzaSyAbKXYb0ImzYCoyzZG8pM70S2k3hilCppE",
-    authDomain: "drone-team-rotation.firebaseapp.com",
-    projectId: "drone-team-rotation",
-    storageBucket: "drone-team-rotation.firebasestorage.app",
-    messagingSenderId: "972886553431",
-    appId: "1:972886553431:web:c7253c4c8862e921720412",
-    measurementId: "G-VF7HF4EC4S"
-  };
+    const firebaseConfig = {
+      apiKey: "AIzaSyAbKXYb0ImzYCoyzZG8pM70S2k3hilCppE",
+      authDomain: "drone-team-rotation.firebaseapp.com",
+      projectId: "drone-team-rotation",
+      storageBucket: "drone-team-rotation.firebasestorage.app",
+      messagingSenderId: "972886553431",
+      appId: "1:972886553431:web:c7253c4c8862e921720412",
+      measurementId: "G-VF7HF4EC4S"
+    };
 
-  const app = initializeApp(firebaseConfig);
-  const db = getFirestore(app);
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
 
-  // Wait for DOM to be ready
-  document.addEventListener('DOMContentLoaded', () => {
     const lists = {
       tables:    document.getElementById('tables'),
       waitA:     document.getElementById('waitA'),
@@ -91,10 +99,8 @@
       inB:       document.getElementById('inB')
     };
 
-    // Validate all lists exist
-    const missing = Object.entries(lists)
-      .filter(([key, el]) => !el)
-      .map(([key]) => key);
+    // Safety check
+    const missing = Object.keys(lists).filter(key => !lists[key]);
     if (missing.length > 0) {
       console.error("Missing DOM elements:", missing);
       return;
@@ -102,15 +108,12 @@
 
     const q = query(collection(db, 'teams'));
     onSnapshot(q, (snapshot) => {
-      // Clear only valid lists
-      Object.values(lists).forEach(list => {
-        if (list) list.innerHTML = '';
-      });
+      Object.values(lists).forEach(list => list.innerHTML = '');
 
       snapshot.docs.forEach(docSnap => {
         const team = docSnap.data();
         const station = team.station || null;
-        let target = lists.tables; // default
+        let target = lists.tables;
 
         if (station === 'waitA') target = lists.waitA;
         else if (station === 'ondeckA') target = lists.ondeckA;
@@ -118,11 +121,6 @@
         else if (station === 'waitB') target = lists.waitB;
         else if (station === 'ondeckB') target = lists.ondeckB;
         else if (station === 'inB') target = lists.inB;
-
-        if (!target) {
-          console.warn("No target for station:", station);
-          return;
-        }
 
         const card = document.createElement('div');
         card.className = 'team-card';
@@ -132,7 +130,7 @@
     }, (error) => {
       console.error("Firestore error:", error);
     });
-  });
-</script>
+  </script>
+
 </body>
 </html>
